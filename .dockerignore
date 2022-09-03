@@ -1,0 +1,6 @@
+logs/
+secrets/
+.dockerignore
+.gitignore
+.git
+.vscode

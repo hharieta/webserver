@@ -1,0 +1,71 @@
+version: "3.9"
+
+
+services:
+  database:
+    build:
+       context: .
+       dockerfile: mysql.dockerfile
+    container_name: database_c1
+    restart: always
+    ports:
+     - 3306:3306
+    volumes:
+      - ./docker/mysql/data:/var/lib/mysql:rw
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_pass
+      SERVICE_TAGS: testing
+      SERVICE_NAME: database
+    secrets:
+      - mysql_root_pass
+    networks:
+      draft_network:
+        aliases:
+          - database_container
+  web:
+    build:
+      context: .
+      dockerfile: nginx.dockerfile
+    container_name: web_c1
+    restart: always
+    ports:
+      - 8080:80
+    volumes:
+      - ./docker/public_html:/public_html
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - database
+    networks:
+      draft_network:
+        aliases:
+          - web_container
+
+  php:
+    build:
+      context: .
+      dockerfile: php.dockerfile
+    container_name: php_c1
+    restart: always
+    expose:
+      - 9000
+    volumes:
+      - ./docker/public_html:/public_html
+    depends_on:
+      - database
+      - web
+    networks:
+      draft_network:
+        aliases:
+          - php_container
+
+secrets:
+  mysql_root_pass:
+    file: ./secrets/mysql_root_pass.txt
+volumes:
+  docker: {}
+networks:
+  draft_network:
+    name: webserver_net
+    driver: bridge
+    ipam:
+      driver: default
